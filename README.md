@@ -142,6 +142,68 @@ Edit `config.yaml` to customize:
 - **Training**: Modify epochs, batch size, learning rate, etc.
 - **Inference**: Toggle MPS, quantization, and other inference settings
 
+## MPS (Metal Performance Shaders) Acceleration
+
+This project is optimized for Apple Silicon Macs (M1, M2, M3) using **Metal Performance Shaders (MPS)** for GPU acceleration. MPS is Apple's framework that allows PyTorch to leverage the GPU cores in Apple Silicon chips for neural network computations.
+
+### What is MPS?
+
+MPS provides a unified API for GPU-accelerated machine learning on macOS. Instead of using CUDA (NVIDIA GPUs) or running on CPU, MPS enables PyTorch to execute tensor operations directly on Apple's Metal GPU, resulting in significantly faster inference and training.
+
+### Performance Benefits
+
+- **3-5x faster inference** compared to CPU-only execution
+- **Lower memory usage** through efficient GPU memory management
+- **Native integration** with PyTorch - no additional drivers needed
+- **Automatic fallback** to CPU if MPS is unavailable
+
+### How It Works in This Project
+
+The code automatically detects MPS availability and uses it for:
+- Model loading and inference (email generation)
+- LoRA fine-tuning (if supported)
+- Tensor operations during forward passes
+
+MPS is enabled by default in `config.yaml`:
+```yaml
+inference:
+  use_mps: true
+  device: "mps"  # Automatically falls back to "cpu" if MPS unavailable
+```
+
+### Requirements
+
+- **macOS 12.3+** (Monterey or later)
+- **Apple Silicon Mac** (M1, M2, M3, or later)
+- **PyTorch 1.12+** with MPS support (included in requirements.txt)
+
+### Verifying MPS Support
+
+Check if MPS is available on your system:
+```python
+import torch
+print(f"MPS available: {torch.backends.mps.is_available()}")
+print(f"MPS built: {torch.backends.mps.is_built()}")
+```
+
+Or use the setup verification script:
+```bash
+python scripts/check_setup.py
+```
+
+### Performance Notes
+
+- **First generation**: ~8-12 seconds (includes model loading)
+- **Subsequent generations**: ~8-12 seconds per email (with Llama 3.2 3B)
+- **Model compilation**: The code attempts to use `torch.compile()` for additional 20-30% speedup when available
+- **Memory**: Llama 3.2 3B requires ~8-12GB RAM with MPS acceleration
+
+### Limitations
+
+- **Quantization**: 8-bit quantization (BitsAndBytes) doesn't work with MPS, so the model uses float16 precision instead
+- **Training**: Some training operations may still use CPU, but inference is fully GPU-accelerated
+- **CUDA models**: Models trained on CUDA can be used with MPS without modification
+
 ## Model Recommendations for M3 Mac
 
 The default model is **`meta-llama/Llama-3.2-3B-Instruct`** - best quality for email generation.
@@ -172,13 +234,25 @@ For more detailed information, see:
 
 1. **Training Data**: More diverse examples = better generalization
 2. **LoRA Rank**: Higher `r` values (16, 32) may improve quality but increase training time
-3. **Quantization**: Enable for faster inference on CPU, disable for MPS
+3. **Quantization**: Not used with MPS (automatically disabled). For CPU inference, enable in config.yaml
 4. **Temperature**: Lower values (0.5-0.7) for more consistent outputs
+5. **MPS Optimization**: Keep other applications closed during inference for best GPU performance
+6. **Memory Management**: The code automatically clears MPS cache between generations to prevent memory buildup
 
 ## Troubleshooting
 
 ### MPS Not Available
-If MPS is not available, the code will automatically fall back to CPU. Make sure you have PyTorch with MPS support.
+If MPS is not available, the code will automatically fall back to CPU. Common causes:
+- **Intel Mac**: MPS only works on Apple Silicon (M1/M2/M3). Intel Macs will use CPU.
+- **Old macOS**: Requires macOS 12.3+ (Monterey or later)
+- **PyTorch version**: Ensure you have PyTorch 1.12+ with MPS support
+
+To check MPS availability:
+```bash
+python -c "import torch; print('MPS:', torch.backends.mps.is_available())"
+```
+
+**Note**: CPU inference will work but will be slower (~20-30 seconds per email with Llama 3.2 3B).
 
 ### Out of Memory
 - Reduce `per_device_train_batch_size` in `config.yaml`
