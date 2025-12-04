@@ -22,6 +22,9 @@ data/raw_emails/*.txt
 data/raw_emails/*.meta.json
 data/processed/
 
+# Sensitive training data (contains real email addresses and personal information)
+data/train_dataset.jsonl
+
 # IDE
 .vscode/
 .idea/
