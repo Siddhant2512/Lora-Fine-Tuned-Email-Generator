@@ -1,0 +1,46 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+.venv/
+venv/
+ENV/
+env/
+
+# Models and Data
+models/
+*.bin
+*.safetensors
+*.pt
+*.pth
+*.pkl
+data/raw_emails/*.rtfd/
+data/raw_emails/*.rtf
+data/raw_emails/*.txt
+data/raw_emails/*.meta.json
+data/processed/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+logs/
+
+# Environment
+.env
+.env.local
+
+# Checkpoints
+checkpoints/
+outputs/
+

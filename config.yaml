@@ -1,0 +1,54 @@
+# LoRA-Mail Assistant Configuration
+
+model:
+  # Using Llama 3.2 3B for best quality (instruction-tuned, much better results)
+  base_model: "meta-llama/Llama-3.2-3B-Instruct"  # Best quality, instruction-tuned
+  # Alternatives:
+  #   - "meta-llama/Llama-3.2-3B-Instruct" - Best quality (3B params, ~6GB) ⭐ CURRENT
+  #   - "gpt2" - Fast, small (~124M params, ~500MB) - No access required
+  #   - "gpt2-medium" - Better quality than GPT-2 (~355M params, ~1.4GB)
+  #   - "distilgpt2" - Fastest (~82M params, ~350MB)
+  max_length: 512
+  temperature: 0.7
+  top_p: 0.9
+
+lora:
+  r: 8  # LoRA rank (4-16 recommended, higher = more capacity but slower)
+  lora_alpha: 16
+  # Auto-detected based on model architecture (leave empty for auto-detection)
+  # For Llama: ["q_proj", "k_proj", "v_proj", "o_proj"]
+  # For GPT-2: ["c_attn", "c_proj"]
+  # For OPT: ["q_proj", "v_proj", "k_proj", "out_proj"]
+  target_modules: []  # Empty = auto-detect, or specify manually
+  lora_dropout: 0.1
+  bias: "none"
+  task_type: "CAUSAL_LM"
+
+training:
+  output_dir: "./models/lora_email_assistant"
+  num_epochs: 5
+  per_device_train_batch_size: 1  # Llama 3.2 3B needs batch size 1
+  gradient_accumulation_steps: 8  # Increased for Llama (effective batch = 8)
+  learning_rate: 2e-4
+  warmup_steps: 100
+  save_steps: 500
+  logging_steps: 50
+  save_total_limit: 3
+
+inference:
+  use_mps: true  # M3 Mac MPS acceleration
+  use_quantization: true  # 8-bit quantization for speed
+  device: "mps"  # Will fallback to cpu if MPS not available
+  use_greedy_decoding: false  # Set to true for fastest generation (slightly lower quality)
+
+data:
+  examples_dir: "./data/examples"
+  train_file: "./data/train_dataset.jsonl"
+
+api:
+  host: "0.0.0.0"
+  port: 8000
+
+ui:
+  streamlit_port: 8501
+
