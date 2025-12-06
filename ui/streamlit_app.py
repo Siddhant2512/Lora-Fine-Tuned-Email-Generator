@@ -21,12 +21,6 @@ st.set_page_config(
 config = load_config()
 api_url = f"http://localhost:{config['api']['port']}"
 
-# Initialize session state
-if 'email_model' not in st.session_state:
-    st.session_state.email_model = None
-if 'model_loaded' not in st.session_state:
-    st.session_state.model_loaded = False
-
 def get_model():
     """Load fine-tuned model once and cache it in session state."""
     if st.session_state.email_model is None or not st.session_state.model_loaded:
@@ -55,6 +49,12 @@ def get_model():
 
 
 def main():
+    # Initialize session state (must be at start of main function)
+    if 'email_model' not in st.session_state:
+        st.session_state.email_model = None
+    if 'model_loaded' not in st.session_state:
+        st.session_state.model_loaded = False
+    
     st.title("✉️ LoRA-Mail Assistant")
     st.markdown("Generate emails in your personal style using AI fine-tuned with LoRA")
     
