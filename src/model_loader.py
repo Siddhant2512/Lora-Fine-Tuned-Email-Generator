@@ -25,10 +25,14 @@ class EmailModel:
         # Try Streamlit secrets first (for Streamlit Cloud)
         try:
             import streamlit as st
-            if hasattr(st, 'secrets') and 'secrets' in dir(st):
-                hf_token = st.secrets.get("HF_TOKEN") or st.secrets.get("HUGGINGFACE_TOKEN")
-        except:
-            pass  # Not in Streamlit environment or secrets not available
+            # Check if we're in a Streamlit context and secrets are available
+            if hasattr(st, 'secrets'):
+                try:
+                    hf_token = st.secrets.get("HF_TOKEN") or st.secrets.get("HUGGINGFACE_TOKEN")
+                except (AttributeError, KeyError, TypeError):
+                    pass  # Secrets not configured or not available
+        except (ImportError, RuntimeError):
+            pass  # Not in Streamlit environment
         
         # Fall back to environment variables (for Hugging Face Spaces, local, etc.)
         if not hf_token:
