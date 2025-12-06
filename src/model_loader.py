@@ -129,7 +129,7 @@ class EmailModel:
                 self.use_quantization = False  # Disable quantization for this session
                 self.model = AutoModelForCausalLM.from_pretrained(
                     base_model_name,
-                    torch_dtype=torch.float16 if cuda_available else torch.float32,
+                    dtype=torch.float16 if cuda_available else torch.float32,  # Use dtype instead of torch_dtype
                     low_cpu_mem_usage=True,
                     **model_kwargs
                 )
@@ -140,7 +140,7 @@ class EmailModel:
             # For CPU, we don't use device_map="auto" as it can cause issues
             try:
                 load_kwargs = {
-                    "torch_dtype": torch.float16 if (self.device != "cpu" and not is_cpu) else torch.float32,
+                    "dtype": torch.float16 if (self.device != "cpu" and not is_cpu) else torch.float32,  # Use dtype instead of torch_dtype
                     "low_cpu_mem_usage": True,
                     **model_kwargs
                 }

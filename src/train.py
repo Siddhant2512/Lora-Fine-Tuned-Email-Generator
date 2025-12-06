@@ -123,7 +123,7 @@ def train_lora_model():
     # Load model
     model = AutoModelForCausalLM.from_pretrained(
         config['model']['base_model'],
-        torch_dtype=torch.float16 if device != "cpu" else torch.float32
+        dtype=torch.float16 if device != "cpu" else torch.float32  # Use dtype instead of torch_dtype
     )
     
     # Move to device
