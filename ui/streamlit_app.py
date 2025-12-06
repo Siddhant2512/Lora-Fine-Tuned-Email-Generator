@@ -109,12 +109,6 @@ def main():
     with st.form("email_form"):
         st.subheader("Email Context")
         
-        recipient = st.text_input(
-            "Recipient",
-            placeholder="e.g., john.doe@company.com",
-            help="Who is this email for?"
-        )
-        
         message_description = st.text_area(
             "Message Description",
             placeholder="Describe what you want to communicate in this email...",
@@ -126,8 +120,8 @@ def main():
     
     # Generate email
     if submitted:
-        if not recipient or not message_description:
-            st.error("Please fill in both Recipient and Message Description fields.")
+        if not message_description:
+            st.error("Please fill in the Message Description field.")
         else:
             # Use message description as purpose, empty key_points for simplified prompt
             purpose = message_description
@@ -140,7 +134,6 @@ def main():
                         response = requests.post(
                             f"{api_url}/generate",
                             json={
-                                "recipient": recipient,
                                 "purpose": purpose,
                                 "key_points": key_points,
                                 "tone": tone
@@ -180,7 +173,7 @@ def main():
                             # Generate with progress updates
                             progress_bar.progress(30)
                             fine_tuned_email = model.generate_email(
-                                recipient=recipient,
+                                recipient="",  # Not needed - user only wants content
                                 purpose=purpose,
                                 key_points=key_points,
                                 tone=tone
@@ -210,7 +203,7 @@ def main():
                         if show_comparison:
                             status_text.info("🔄 Generating base model comparison...")
                             base_email = model.generate_email_base(
-                                recipient=recipient,
+                                recipient="",  # Not needed - user only wants content
                                 purpose=purpose,
                                 key_points=key_points,
                                 tone=tone
@@ -243,7 +236,7 @@ def main():
                             st.download_button(
                                 label="📥 Download Fine-Tuned",
                                 data=fine_tuned_email,
-                                file_name=f"email_finetuned_{recipient.replace('@', '_at_')}.txt",
+                                file_name="generated_email_finetuned.txt",
                                 mime="text/plain",
                                 key="download_finetuned"
                             )
@@ -261,7 +254,7 @@ def main():
                             st.download_button(
                                 label="📥 Download Base",
                                 data=base_email,
-                                file_name=f"email_base_{recipient.replace('@', '_at_')}.txt",
+                                file_name="generated_email_base.txt",
                                 mime="text/plain",
                                 key="download_base"
                             )
@@ -280,7 +273,7 @@ def main():
                         st.download_button(
                             label="📥 Download Email",
                             data=fine_tuned_email,
-                            file_name=f"email_{recipient.replace('@', '_at_')}.txt",
+                            file_name="generated_email.txt",
                             mime="text/plain",
                             key="download"
                         )

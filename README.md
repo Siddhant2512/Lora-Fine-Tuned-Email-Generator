@@ -123,7 +123,6 @@ import requests
 response = requests.post(
     "http://localhost:8000/generate",
     json={
-        "recipient": "colleague@company.com",
         "purpose": "Follow up on meeting",
         "key_points": "Discuss timeline\nReview budget",
         "tone": "professional"
@@ -223,8 +222,6 @@ The default model is **`meta-llama/Llama-3.2-3B-Instruct`** - best quality for e
 For more detailed information, see:
 
 - **`GETTING_STARTED.md`** - Quick start guide with step-by-step instructions
-- **`MODEL_GUIDE.md`** - Detailed model selection and configuration guide
-- **`MODEL_COMPARISON.md`** - Detailed comparison between Llama 3.2 3B and GPT-2
 - **`ADDING_TRAINING_DATA.md`** - Guide on how to add your training data
 - **`DATA_PREP_GUIDE.md`** - Guide for preparing raw email files
 - **`HUGGINGFACE_TOKEN_SETUP.md`** - Detailed Hugging Face authentication setup

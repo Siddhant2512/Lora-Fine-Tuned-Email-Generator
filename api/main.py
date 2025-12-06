@@ -43,7 +43,6 @@ def get_model() -> EmailModel:
 
 
 class EmailRequest(BaseModel):
-    recipient: str
     purpose: str
     key_points: str
     tone: str = "professional"
@@ -76,7 +75,7 @@ async def generate_email(request: EmailRequest):
     try:
         model = get_model()
         email = model.generate_email(
-            recipient=request.recipient,
+            recipient="",  # Not needed - user only wants content
             purpose=request.purpose,
             key_points=request.key_points,
             tone=request.tone

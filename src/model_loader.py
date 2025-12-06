@@ -144,8 +144,8 @@ class EmailModel:
     def _format_prompt(self, recipient: str, purpose: str, key_points: str, tone: str) -> str:
         """Format prompt based on model type. key_points parameter kept for API compatibility but not used."""
         if self.is_llama:
-            # Simplified format - no key_points section
-            instruction = f"""Write a {tone} email to {recipient}.
+            # Simplified format - no recipient or key_points section
+            instruction = f"""Write a {tone} email.
 
 Message: {purpose}
 
@@ -170,8 +170,8 @@ Email:"""
             else:
                 prompt = instruction
         else:
-            # Simple format for GPT-2 and other models - no key_points section
-            prompt = f"""Write a {tone} email to {recipient}.
+            # Simple format for GPT-2 and other models - no recipient or key_points section
+            prompt = f"""Write a {tone} email.
 
 Message: {purpose}
 
