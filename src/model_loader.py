@@ -102,18 +102,34 @@ class EmailModel:
         if hf_token:
             model_kwargs["token"] = hf_token
         
-        if self.use_quantization and self.device == "cpu":
-            # 8-bit quantization for CPU only
-            quantization_config = BitsAndBytesConfig(
-                load_in_8bit=True,
-                llm_int8_threshold=6.0
-            )
-            self.model = AutoModelForCausalLM.from_pretrained(
-                base_model_name,
-                quantization_config=quantization_config,
-                device_map="auto",
-                **model_kwargs
-            )
+        # Check if CUDA is available for quantization (quantization requires GPU)
+        cuda_available = torch.cuda.is_available()
+        
+        if self.use_quantization and cuda_available:
+            # 8-bit quantization for GPU only (CUDA)
+            # Note: Quantization doesn't work well on CPU, so we disable it for CPU-only environments
+            try:
+                quantization_config = BitsAndBytesConfig(
+                    load_in_8bit=True,
+                    llm_int8_threshold=6.0
+                )
+                self.model = AutoModelForCausalLM.from_pretrained(
+                    base_model_name,
+                    quantization_config=quantization_config,
+                    device_map="auto",
+                    **model_kwargs
+                )
+            except Exception as e:
+                # If quantization fails, fall back to standard loading
+                print(f"⚠️  Quantization failed: {e}. Falling back to standard loading.")
+                self.model = AutoModelForCausalLM.from_pretrained(
+                    base_model_name,
+                    torch_dtype=torch.float16,
+                    low_cpu_mem_usage=True,
+                    **model_kwargs
+                )
+                if self.device != "cpu":
+                    self.model.to(self.device)
         else:
             # Standard loading for MPS/CUDA - use float16 for speed
             try:
