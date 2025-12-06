@@ -55,6 +55,10 @@ def main():
     if 'model_loaded' not in st.session_state:
         st.session_state.model_loaded = False
     
+    # Debug: Check if HF_TOKEN is available (only show in sidebar for debugging)
+    if 'show_debug' not in st.session_state:
+        st.session_state.show_debug = False
+    
     st.title("✉️ LoRA-Mail Assistant")
     st.markdown("Generate emails in your personal style using AI fine-tuned with LoRA")
     
@@ -83,6 +87,43 @@ def main():
             st.session_state.email_model = None
             st.success("Model cache cleared. Will reload on next generation.")
             st.rerun()
+        
+        # Debug section (expandable)
+        with st.expander("🔍 Debug Info (for troubleshooting)"):
+            st.session_state.show_debug = True
+            # Check Streamlit secrets
+            try:
+                if hasattr(st, 'secrets'):
+                    hf_token_secret = None
+                    try:
+                        hf_token_secret = st.secrets.get("HF_TOKEN")
+                    except:
+                        try:
+                            hf_token_secret = st.secrets["HF_TOKEN"]
+                        except:
+                            try:
+                                hf_token_secret = getattr(st.secrets, "HF_TOKEN", None)
+                            except:
+                                pass
+                    
+                    if hf_token_secret:
+                        st.success(f"✅ HF_TOKEN found in secrets (length: {len(hf_token_secret)})")
+                        st.code(f"Token starts with: {hf_token_secret[:10]}...")
+                    else:
+                        st.error("❌ HF_TOKEN not found in Streamlit secrets")
+                        st.info("Add it in Streamlit Cloud settings → Secrets")
+                else:
+                    st.warning("⚠️ st.secrets not available")
+            except Exception as e:
+                st.error(f"Error checking secrets: {e}")
+            
+            # Check environment variables
+            import os
+            env_token = os.getenv("HF_TOKEN") or os.getenv("HUGGINGFACE_TOKEN")
+            if env_token:
+                st.success(f"✅ HF_TOKEN found in environment (length: {len(env_token)})")
+            else:
+                st.info("ℹ️ HF_TOKEN not in environment variables")
         
         # Comparison option
         show_comparison = st.checkbox(
