@@ -19,23 +19,36 @@ class EmailModel:
         base_model_name = self.config['model']['base_model']
         
         # Check for Hugging Face authentication if needed
+        # Support both environment variable (for cloud) and CLI login (for local)
+        hf_token = os.getenv("HF_TOKEN") or os.getenv("HUGGINGFACE_TOKEN") or os.getenv("HF_API_TOKEN")
+        
         if "llama" in base_model_name.lower():
             try:
-                from huggingface_hub import whoami
+                from huggingface_hub import whoami, login
+                # If token is in environment, use it
+                if hf_token:
+                    login(token=hf_token, add_to_git_credential=False)
                 whoami()  # Test authentication
             except Exception as e:
-                print(f"⚠️  Warning: Hugging Face authentication may be required for {base_model_name}")
-                print("   Run: huggingface-cli login")
-                print(f"   Error: {e}")
+                if not hf_token:
+                    print(f"⚠️  Warning: Hugging Face authentication may be required for {base_model_name}")
+                    print("   For local: Run: huggingface-cli login")
+                    print("   For cloud: Set HF_TOKEN environment variable in Streamlit Cloud")
+                    print(f"   Error: {e}")
         
         try:
-            self.tokenizer = AutoTokenizer.from_pretrained(base_model_name)
+            # Use token if available
+            tokenizer_kwargs = {}
+            if hf_token:
+                tokenizer_kwargs["token"] = hf_token
+            
+            self.tokenizer = AutoTokenizer.from_pretrained(base_model_name, **tokenizer_kwargs)
         except Exception as e:
             if "authentication" in str(e).lower() or "401" in str(e):
-                raise RuntimeError(
-                    f"Authentication required for {base_model_name}. "
-                    "Run: huggingface-cli login"
-                ) from e
+                error_msg = f"Authentication required for {base_model_name}.\n"
+                error_msg += "For local: Run: huggingface-cli login\n"
+                error_msg += "For Streamlit Cloud: Set HF_TOKEN as a secret in your app settings"
+                raise RuntimeError(error_msg) from e
             raise
         
         # Set padding token if not present
@@ -52,6 +65,11 @@ class EmailModel:
         
         # Load model - quantization doesn't work on MPS, so disable it
         # For MPS, use float16 which is faster than float32
+        # Use token if available
+        model_kwargs = {}
+        if hf_token:
+            model_kwargs["token"] = hf_token
+        
         if self.use_quantization and self.device == "cpu":
             # 8-bit quantization for CPU only
             quantization_config = BitsAndBytesConfig(
@@ -61,7 +79,8 @@ class EmailModel:
             self.model = AutoModelForCausalLM.from_pretrained(
                 base_model_name,
                 quantization_config=quantization_config,
-                device_map="auto"
+                device_map="auto",
+                **model_kwargs
             )
         else:
             # Standard loading for MPS/CUDA - use float16 for speed
@@ -69,16 +88,17 @@ class EmailModel:
                 self.model = AutoModelForCausalLM.from_pretrained(
                     base_model_name,
                     torch_dtype=torch.float16 if self.device != "cpu" else torch.float32,
-                    low_cpu_mem_usage=True  # Faster loading
+                    low_cpu_mem_usage=True,  # Faster loading
+                    **model_kwargs
                 )
                 if self.device != "cpu":
                     self.model.to(self.device)
             except Exception as e:
                 if "authentication" in str(e).lower() or "401" in str(e):
-                    raise RuntimeError(
-                        f"Authentication required for {base_model_name}. "
-                        "Run: huggingface-cli login"
-                    ) from e
+                    error_msg = f"Authentication required for {base_model_name}.\n"
+                    error_msg += "For local: Run: huggingface-cli login\n"
+                    error_msg += "For Streamlit Cloud: Set HF_TOKEN as a secret in your app settings"
+                    raise RuntimeError(error_msg) from e
                 raise
         
         # Load LoRA weights if available
