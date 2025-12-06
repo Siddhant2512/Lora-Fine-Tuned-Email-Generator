@@ -103,15 +103,19 @@ class EmailModel:
             model_kwargs["token"] = hf_token
         
         # Check if CUDA is available for quantization (quantization requires GPU)
+        # Also check if we're on CPU - quantization doesn't work on CPU
         cuda_available = torch.cuda.is_available()
+        is_cpu = self.device == "cpu"
         
-        if self.use_quantization and cuda_available:
+        # Disable quantization on CPU (quantization requires GPU/CUDA)
+        if self.use_quantization and cuda_available and not is_cpu:
             # 8-bit quantization for GPU only (CUDA)
-            # Note: Quantization doesn't work well on CPU, so we disable it for CPU-only environments
+            # Note: Quantization doesn't work on CPU, so we disable it for CPU-only environments
             try:
                 quantization_config = BitsAndBytesConfig(
                     load_in_8bit=True,
-                    llm_int8_threshold=6.0
+                    llm_int8_threshold=6.0,
+                    llm_int8_enable_fp32_cpu_offload=False  # Disable CPU offload
                 )
                 self.model = AutoModelForCausalLM.from_pretrained(
                     base_model_name,
@@ -122,24 +126,36 @@ class EmailModel:
             except Exception as e:
                 # If quantization fails, fall back to standard loading
                 print(f"⚠️  Quantization failed: {e}. Falling back to standard loading.")
+                self.use_quantization = False  # Disable quantization for this session
                 self.model = AutoModelForCausalLM.from_pretrained(
                     base_model_name,
-                    torch_dtype=torch.float16,
+                    torch_dtype=torch.float16 if cuda_available else torch.float32,
                     low_cpu_mem_usage=True,
                     **model_kwargs
                 )
                 if self.device != "cpu":
                     self.model.to(self.device)
         else:
-            # Standard loading for MPS/CUDA - use float16 for speed
+            # Standard loading for MPS/CPU - use float16 for GPU, float32 for CPU
+            # For CPU, we don't use device_map="auto" as it can cause issues
             try:
+                load_kwargs = {
+                    "torch_dtype": torch.float16 if (self.device != "cpu" and not is_cpu) else torch.float32,
+                    "low_cpu_mem_usage": True,
+                    **model_kwargs
+                }
+                
+                # Only use device_map for GPU, not for CPU
+                if cuda_available and not is_cpu:
+                    load_kwargs["device_map"] = "auto"
+                
                 self.model = AutoModelForCausalLM.from_pretrained(
                     base_model_name,
-                    torch_dtype=torch.float16 if self.device != "cpu" else torch.float32,
-                    low_cpu_mem_usage=True,  # Faster loading
-                    **model_kwargs
+                    **load_kwargs
                 )
-                if self.device != "cpu":
+                
+                # Move to device if not using device_map
+                if "device_map" not in load_kwargs and self.device != "cpu":
                     self.model.to(self.device)
             except Exception as e:
                 if "authentication" in str(e).lower() or "401" in str(e):
