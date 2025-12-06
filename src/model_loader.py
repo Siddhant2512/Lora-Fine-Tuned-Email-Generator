@@ -139,15 +139,25 @@ class EmailModel:
             # Standard loading for MPS/CPU - use float16 for GPU, float32 for CPU
             # For CPU, we don't use device_map="auto" as it can cause issues
             try:
-                load_kwargs = {
-                    "dtype": torch.float16 if (self.device != "cpu" and not is_cpu) else torch.float32,  # Use dtype instead of torch_dtype
-                    "low_cpu_mem_usage": True,
-                    **model_kwargs
-                }
-                
-                # Only use device_map for GPU, not for CPU
-                if cuda_available and not is_cpu:
-                    load_kwargs["device_map"] = "auto"
+                # For CPU/Streamlit Cloud, use more conservative settings to prevent crashes
+                if is_cpu:
+                    # CPU loading - use float32 and avoid device_map
+                    load_kwargs = {
+                        "dtype": torch.float32,  # CPU needs float32
+                        "low_cpu_mem_usage": True,
+                        **model_kwargs
+                    }
+                else:
+                    # GPU/MPS loading
+                    load_kwargs = {
+                        "dtype": torch.float16,
+                        "low_cpu_mem_usage": True,
+                        **model_kwargs
+                    }
+                    
+                    # Only use device_map for CUDA GPU, not for MPS or CPU
+                    if cuda_available:
+                        load_kwargs["device_map"] = "auto"
                 
                 self.model = AutoModelForCausalLM.from_pretrained(
                     base_model_name,
