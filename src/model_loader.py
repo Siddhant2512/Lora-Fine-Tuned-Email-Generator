@@ -19,8 +19,20 @@ class EmailModel:
         base_model_name = self.config['model']['base_model']
         
         # Check for Hugging Face authentication if needed
-        # Support both environment variable (for cloud) and CLI login (for local)
-        hf_token = os.getenv("HF_TOKEN") or os.getenv("HUGGINGFACE_TOKEN") or os.getenv("HF_API_TOKEN")
+        # Support environment variable, Streamlit secrets (for Streamlit Cloud), and CLI login (for local)
+        hf_token = None
+        
+        # Try Streamlit secrets first (for Streamlit Cloud)
+        try:
+            import streamlit as st
+            if hasattr(st, 'secrets') and 'secrets' in dir(st):
+                hf_token = st.secrets.get("HF_TOKEN") or st.secrets.get("HUGGINGFACE_TOKEN")
+        except:
+            pass  # Not in Streamlit environment or secrets not available
+        
+        # Fall back to environment variables (for Hugging Face Spaces, local, etc.)
+        if not hf_token:
+            hf_token = os.getenv("HF_TOKEN") or os.getenv("HUGGINGFACE_TOKEN") or os.getenv("HF_API_TOKEN")
         
         if "llama" in base_model_name.lower():
             try:
