@@ -28,11 +28,27 @@ class EmailModel:
             # Check if we're in a Streamlit context and secrets are available
             if hasattr(st, 'secrets'):
                 try:
+                    # Try multiple access methods for Streamlit secrets
+                    # Method 1: Dictionary access with get()
                     hf_token = st.secrets.get("HF_TOKEN") or st.secrets.get("HUGGINGFACE_TOKEN")
-                except (AttributeError, KeyError, TypeError):
-                    pass  # Secrets not configured or not available
-        except (ImportError, RuntimeError):
-            pass  # Not in Streamlit environment
+                    # Method 2: Direct dictionary access
+                    if not hf_token:
+                        try:
+                            hf_token = st.secrets["HF_TOKEN"]
+                        except (KeyError, TypeError):
+                            pass
+                    # Method 3: Attribute access
+                    if not hf_token:
+                        try:
+                            hf_token = getattr(st.secrets, "HF_TOKEN", None) or getattr(st.secrets, "HUGGINGFACE_TOKEN", None)
+                        except (AttributeError, TypeError):
+                            pass
+                except (AttributeError, KeyError, TypeError, RuntimeError) as e:
+                    # Secrets might not be available at initialization time
+                    pass
+        except (ImportError, RuntimeError, AttributeError):
+            # Not in Streamlit environment or Streamlit not initialized yet
+            pass
         
         # Fall back to environment variables (for Hugging Face Spaces, local, etc.)
         if not hf_token:
