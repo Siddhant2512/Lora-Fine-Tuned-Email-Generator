@@ -1,3 +1,14 @@
+---
+title: LoRA-Mail Assistant
+emoji: ✉️
+colorFrom: blue
+colorTo: purple
+sdk: streamlit
+sdk_version: "1.28.0"
+app_file: app.py
+pinned: false
+---
+
 # LoRA-Mail Assistant
 
 A web-deployable AI assistant that fine-tunes a small open-source LLM using LoRA to write emails in your specific personal/professional style.
@@ -143,11 +154,7 @@ Edit `config.yaml` to customize:
 
 ## MPS (Metal Performance Shaders) Acceleration
 
-This project is optimized for Apple Silicon Macs (M1, M2, M3) using **Metal Performance Shaders (MPS)** for GPU acceleration. MPS is Apple's framework that allows PyTorch to leverage the GPU cores in Apple Silicon chips for neural network computations.
-
-### What is MPS?
-
-MPS provides a unified API for GPU-accelerated machine learning on macOS. Instead of using CUDA (NVIDIA GPUs) or running on CPU, MPS enables PyTorch to execute tensor operations directly on Apple's Metal GPU, resulting in significantly faster inference and training.
+This project is optimized for Apple Silicon Macs (M1, M2, M3) using **Metal Performance Shaders (MPS)** for GPU acceleration. MPS provides a unified API for GPU-accelerated machine learning on macOS. Instead of using CUDA (NVIDIA GPUs) or running on CPU, MPS enables PyTorch to execute tensor operations directly on Apple's Metal GPU, resulting in significantly faster inference and training.
 
 ### Performance Benefits
 
@@ -259,7 +266,11 @@ python -c "import torch; print('MPS:', torch.backends.mps.is_available())"
 ### API Connection Error
 Make sure the FastAPI server is running before starting the Streamlit app.
 
+### Authentication Required
+- For local: Run `huggingface-cli login`
+- For Streamlit Cloud: Set `HF_TOKEN` as a secret in your app settings
+- For Hugging Face Spaces: Set `HF_TOKEN` in Repository secrets
+
 ## License
 
 This project is for personal/educational use.
-
