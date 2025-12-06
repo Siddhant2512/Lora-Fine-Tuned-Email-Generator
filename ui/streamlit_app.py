@@ -42,7 +42,33 @@ def get_model():
             time.sleep(0.5)  # Brief pause to show message
             status.empty()
         except Exception as e:
-            status.error(f"❌ Failed to load model: {str(e)}")
+            error_msg = str(e)
+            status.error(f"❌ Failed to load model: {error_msg}")
+            
+            # Provide helpful error messages
+            if "authentication" in error_msg.lower() or "401" in error_msg.lower():
+                st.error("**Authentication Error**")
+                st.info("""
+                **To fix this:**
+                1. Go to Streamlit Cloud → Settings → Secrets
+                2. Add your Hugging Face token in TOML format:
+                   ```
+                   HF_TOKEN = "your_token_here"
+                   ```
+                3. Make sure the token has quotes around it
+                4. Click Save and wait for redeploy
+                5. Check the Debug Info section in the sidebar for token status
+                """)
+            elif "quantization" in error_msg.lower() or "cpu" in error_msg.lower():
+                st.warning("**Device/Quantization Error**")
+                st.info("""
+                This might be a CPU/GPU compatibility issue. The model will try to load without quantization.
+                """)
+            
+            # Show full error in expander
+            with st.expander("🔍 Full Error Details"):
+                st.exception(e)
+            
             raise
     
     return st.session_state.email_model
@@ -91,39 +117,71 @@ def main():
         # Debug section (expandable)
         with st.expander("🔍 Debug Info (for troubleshooting)"):
             st.session_state.show_debug = True
+            
+            st.subheader("Token Status")
             # Check Streamlit secrets
             try:
                 if hasattr(st, 'secrets'):
                     hf_token_secret = None
+                    access_method = None
                     try:
                         hf_token_secret = st.secrets.get("HF_TOKEN")
-                    except:
+                        access_method = "st.secrets.get()"
+                    except Exception as e1:
                         try:
                             hf_token_secret = st.secrets["HF_TOKEN"]
-                        except:
+                            access_method = "st.secrets[]"
+                        except Exception as e2:
                             try:
                                 hf_token_secret = getattr(st.secrets, "HF_TOKEN", None)
-                            except:
-                                pass
+                                access_method = "getattr()"
+                            except Exception as e3:
+                                st.error(f"All access methods failed: {e1}, {e2}, {e3}")
                     
                     if hf_token_secret:
-                        st.success(f"✅ HF_TOKEN found in secrets (length: {len(hf_token_secret)})")
+                        st.success(f"✅ HF_TOKEN found in secrets (via {access_method})")
+                        st.code(f"Token length: {len(hf_token_secret)} characters")
                         st.code(f"Token starts with: {hf_token_secret[:10]}...")
+                        st.code(f"Token ends with: ...{hf_token_secret[-5:]}")
+                        
+                        # Check if token looks valid
+                        if hf_token_secret.startswith("hf_"):
+                            st.success("✅ Token format looks correct (starts with 'hf_')")
+                        else:
+                            st.warning("⚠️ Token doesn't start with 'hf_' - might be invalid")
                     else:
                         st.error("❌ HF_TOKEN not found in Streamlit secrets")
-                        st.info("Add it in Streamlit Cloud settings → Secrets")
+                        st.info("**How to fix:**")
+                        st.code('''# In Streamlit Cloud → Settings → Secrets, add:
+HF_TOKEN = "your_token_here"''', language="toml")
                 else:
                     st.warning("⚠️ st.secrets not available")
             except Exception as e:
-                st.error(f"Error checking secrets: {e}")
+                st.error(f"Error checking secrets: {str(e)}")
+                st.exception(e)
             
+            st.markdown("---")
+            st.subheader("Environment Variables")
             # Check environment variables
             import os
-            env_token = os.getenv("HF_TOKEN") or os.getenv("HUGGINGFACE_TOKEN")
+            env_token = os.getenv("HF_TOKEN") or os.getenv("HUGGINGFACE_TOKEN") or os.getenv("HF_API_TOKEN")
             if env_token:
                 st.success(f"✅ HF_TOKEN found in environment (length: {len(env_token)})")
             else:
-                st.info("ℹ️ HF_TOKEN not in environment variables")
+                st.info("ℹ️ HF_TOKEN not in environment variables (this is OK if using Streamlit secrets)")
+            
+            st.markdown("---")
+            st.subheader("Model Configuration")
+            st.code(f"Base Model: {config['model']['base_model']}")
+            st.code(f"Device: {config['inference']['device']}")
+            st.code(f"Use Quantization: {config['inference']['use_quantization']}")
+            
+            st.markdown("---")
+            st.subheader("Model Status")
+            if st.session_state.model_loaded:
+                st.success("✅ Model is loaded and cached")
+            else:
+                st.info("ℹ️ Model will load on first generation")
         
         # Comparison option
         show_comparison = st.checkbox(
