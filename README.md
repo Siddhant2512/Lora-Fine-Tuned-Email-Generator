@@ -13,6 +13,14 @@ pinned: false
 
 A web-deployable AI assistant that fine-tunes a small open-source LLM using LoRA to write emails in your specific personal/professional style.
 
+## 🚀 Live Demo
+
+**Try it now!** The app is live and accessible to everyone:
+
+👉 **[https://huggingface.co/spaces/Siddhant251201/LoRa-Mail-Assistant](https://huggingface.co/spaces/Siddhant251201/LoRa-Mail-Assistant)**
+
+Simply describe what you want to communicate, and the AI will generate a professional email in seconds!
+
 ## Features
 
 - **LoRA Fine-tuning**: Efficiently fine-tune a small LLM on your email writing style
