@@ -86,7 +86,7 @@ def main():
         st.session_state.show_debug = False
     
     st.title("✉️ LoRA-Mail Assistant")
-    st.markdown("Generate emails in your personal style using AI fine-tuned with LoRA")
+    st.markdown("Generate emails in a personal style using AI fine-tuned with LoRA")
     
     # Sidebar
     with st.sidebar:
@@ -390,8 +390,15 @@ HF_TOKEN = "your_token_here"''', language="toml")
     # Footer
     st.markdown("---")
     st.markdown(
-        "<div style='text-align: center; color: gray;'>"
-        "LoRA-Mail Assistant - Fine-tuned for your writing style"
+        "<div style='text-align: center; color: gray; padding: 20px;'>"
+        "<p style='margin-bottom: 10px;'>LoRA-Mail Assistant - Fine-tuned for your writing style</p>"
+        "<p style='margin-bottom: 10px;'>Created by <strong>Siddhant Aggarwal</strong></p>"
+        "<p style='margin-bottom: 5px;'>"
+        "<a href='https://github.com/Siddhant2512/Lora-Fine-Tuned-Email-Generator' target='_blank' style='color: #0077b5; text-decoration: none; margin-right: 15px;'>"
+        "🔗 GitHub</a> | "
+        "<a href='https://www.linkedin.com/in/siddhant-aggarwal-24918a223/' target='_blank' style='color: #0077b5; text-decoration: none; margin-left: 15px;'>"
+        "🔗 LinkedIn</a>"
+        "</p>"
         "</div>",
         unsafe_allow_html=True
     )
