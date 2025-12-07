@@ -86,7 +86,8 @@ def main():
         st.session_state.show_debug = False
     
     st.title("✉️ LoRA-Mail Assistant")
-    st.markdown("Generate emails in a personal style using AI fine-tuned with LoRA")
+    st.markdown("Generate emails in a personal style")
+    st.markdown("Navigate to the sidebar to select the tone of the email")
     
     # Sidebar
     with st.sidebar:
